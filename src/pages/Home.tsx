@@ -40,7 +40,7 @@ const streamers: { name: string; viewers: number }[] = [
 
 export default function Home() {
   return (
-    <div className="mx-auto max-w-7xl px-4 py-6">
+    <div className="w-full px-4 py-6">
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-[280px_minmax(0,1fr)_320px]">
         {/* Left: recent threads */}
         <aside className="space-y-3">
