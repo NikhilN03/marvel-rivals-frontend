@@ -1,9 +1,14 @@
 /** @type {import('tailwindcss').Config} */
-export default {
-  content: ["./index.html", "./src/**/*.{ts,tsx}"],
+module.exports = {
+  darkMode: 'class',
+  content: ['./index.html', './src/**/*.{ts,tsx}'],
   theme: {
-    extend: {},
+    extend: {
+      colors: {
+        brand: { DEFAULT: '#e11d48', dark: '#9f1239' } // sleek red
+      }
+    }
   },
-  plugins: [],
-}
+  plugins: []
+};
 
