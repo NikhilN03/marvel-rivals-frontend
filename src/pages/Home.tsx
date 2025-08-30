@@ -1,4 +1,5 @@
 import heroImg from "../assets/images/unloadedimgrivals.png";
+import { Link } from "react-router-dom";
 
 type Thread = { id: string; title: string; replies: number };
 type News = { id: string; title: string; date: string };
