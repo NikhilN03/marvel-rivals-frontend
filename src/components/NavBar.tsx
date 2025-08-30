@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { NavLink } from "react-router-dom";
 import logo from "../assets/images/LogoImgRivals.png";
 
 function DoorIcon({ className = "h-5 w-5" }: { className?: string }) {
@@ -33,11 +34,14 @@ export default function NavBar() {
         <div className="flex items-center justify-between py-3">
           {/* LEFT: Logo → Search → gap → Tabs */}
           <div className="flex items-center">
-            <img
-              src={logo}
-              alt="Rivals Logo"
-              className="h-8 w-auto rounded-sm ring-1 ring-gray-800"
-            />
+            <NavLink to="/" className="inline-flex items-center">
+              <img
+                src={logo}
+                alt="Rivals Logo"
+                className="h-8 w-auto rounded-sm ring-1 ring-gray-800"
+              />
+            </NavLink>
+
 
             <input
               type="text"
@@ -47,15 +51,16 @@ export default function NavBar() {
 
             {/* small visual gap before the main tabs */}
             <nav className="ml-6 flex items-center gap-2">
-              <a className="rounded px-3 py-1.5 text-sm text-gray-300 hover:bg-gray-900 hover:text-white" href="#">
+              <NavLink to="/forums" className="rounded px-3 py-1.5 text-sm text-gray-300 hover:bg-gray-900 hover:text-white">
                 Forums
-              </a>
-              <a className="rounded px-3 py-1.5 text-sm text-gray-300 hover:bg-gray-900 hover:text-white" href="#">
+              </NavLink>
+              <NavLink to="/news" className="rounded px-3 py-1.5 text-sm text-gray-300 hover:bg-gray-900 hover:text-white">
                 News
-              </a>
-              <a className="rounded px-3 py-1.5 text-sm text-gray-300 hover:bg-gray-900 hover:text-white" href="#">
+              </NavLink>
+
+              <NavLink to="/rankings" className="rounded px-3 py-1.5 text-sm text-gray-300 hover:bg-gray-900 hover:text-white">
                 Stats / Rankings
-              </a>
+              </NavLink>
             </nav>
           </div>
 
