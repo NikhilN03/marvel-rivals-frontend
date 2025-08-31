@@ -1,0 +1,412 @@
+openapi: 3.0.3
+info:
+  title: Marvel Rivals API
+  version: 1.0.0
+servers:
+  - url: /api
+paths:
+  /threads:
+    get:
+      summary: List threads (most recent activity)
+      parameters:
+        - in: query
+          name: cursor
+          schema:
+            type: string
+            nullable: true
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            default: 25
+            minimum: 1
+            maximum: 100
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PageThread'
+    post:
+      summary: Create a new thread (authenticated users only)
+      security:
+        - cognitoJwt: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [title, body]
+              properties:
+                title:
+                  type: string
+                  minLength: 1
+                  maxLength: 120
+                body:
+                  type: string
+                  minLength: 1
+                  maxLength: 2000
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Thread'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '413':
+          $ref: '#/components/responses/TooLarge'
+
+  /threads/{threadId}:
+    get:
+      summary: Get a thread by id
+      parameters:
+        - $ref: '#/components/parameters/threadId'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Thread'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /threads/{threadId}/comments:
+    get:
+      summary: List comments for a thread (chronological)
+      parameters:
+        - $ref: '#/components/parameters/threadId'
+        - in: query
+          name: since
+          description: Return only comments createdAt >= since (epoch_ms)
+          schema:
+            type: integer
+            format: int64
+            nullable: true
+        - in: query
+          name: cursor
+          schema:
+            type: string
+            nullable: true
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            default: 50
+            minimum: 1
+            maximum: 200
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PageComment'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    post:
+      summary: Add a comment (anonymous allowed but rate-limited; users have higher daily cap)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [body]
+              properties:
+                body:
+                  type: string
+                  minLength: 1
+                  maxLength: 2000
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Comment'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '413':
+          $ref: '#/components/responses/TooLarge'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+
+  /comments/{commentId}/like:
+    post:
+      summary: Like a comment (authenticated only)
+      security:
+        - cognitoJwt: []
+      parameters:
+        - in: path
+          name: commentId
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: No Content
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /rankings:
+    get:
+      summary: Top players by region
+      parameters:
+        - in: query
+          name: region
+          schema:
+            type: string
+            enum: [GLOBAL, NA, EU, ASIA, SA]
+            default: GLOBAL
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RankingsPayload'
+
+  /news:
+    get:
+      summary: Recent news (admin curated)
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/NewsItem'
+
+  /me/limits:
+    get:
+      summary: Remaining posting limits for today
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [subjectType, remainingCommentsToday, dailyLimit, resetAt]
+                properties:
+                  subjectType:
+                    type: string
+                    enum: [ANON, USER]
+                  remainingCommentsToday:
+                    type: integer
+                  dailyLimit:
+                    type: integer
+                  resetAt:
+                    type: integer
+                    format: int64
+
+components:
+  securitySchemes:
+    cognitoJwt:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  parameters:
+    threadId:
+      in: path
+      name: threadId
+      required: true
+      schema:
+        type: string
+
+  responses:
+    Unauthorized:
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    NotFound:
+      description: Not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    TooLarge:
+      description: Request entity too large
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    RateLimited:
+      description: Rate limit exceeded
+      headers:
+        Retry-After:
+          schema:
+            type: integer
+          description: Seconds until retry
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+
+  schemas:
+    Thread:
+      type: object
+      required: [id, title, createdAt, lastActivityAt, postCount]
+      properties:
+        id:
+          type: string
+        title:
+          type: string
+        authorId:
+          type: string
+          nullable: true
+        createdAt:
+          type: integer
+          format: int64
+        lastActivityAt:
+          type: integer
+          format: int64
+        postCount:
+          type: integer
+
+    Comment:
+      type: object
+      required: [id, threadId, body, createdAt, likes]
+      properties:
+        id:
+          type: string
+        threadId:
+          type: string
+        authorId:
+          type: string
+          nullable: true
+        body:
+          type: string
+        createdAt:
+          type: integer
+          format: int64
+        likes:
+          type: integer
+
+    PageThread:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/Thread'
+        cursor:
+          type: string
+          nullable: true
+
+    PageComment:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/Comment'
+        cursor:
+          type: string
+          nullable: true
+
+    RankingRow:
+      type: object
+      required: [playerId, playerName, rank, rating, countryCode, winRate, kda, adr, updatedAt]
+      properties:
+        playerId:
+          type: string
+        playerName:
+          type: string
+        rank:
+          type: integer
+        rating:
+          type: integer
+        countryCode:
+          type: string
+        avatarUrl:
+          type: string
+          nullable: true
+        winRate:
+          type: number
+          format: float
+        kda:
+          type: number
+          format: float
+        adr:
+          type: number
+          format: float
+        updatedAt:
+          type: string
+          format: date-time
+
+    RankingsPayload:
+      type: object
+      required: [updatedAt, players]
+      properties:
+        updatedAt:
+          type: string
+          format: date-time
+        players:
+          type: array
+          maxItems: 10
+          items:
+            $ref: '#/components/schemas/RankingRow'
+        requestedRegion:
+          type: string
+          enum: [GLOBAL, NA, EU, ASIA, SA]
+          nullable: true
+        effectiveRegion:
+          type: string
+          enum: [GLOBAL, NA, EU, ASIA, SA]
+          nullable: true
+        isGlobalFallback:
+          type: boolean
+          nullable: true
+        note:
+          type: string
+          nullable: true
+
+    NewsItem:
+      type: object
+      required: [id, title, date, summary, imageUrl]
+      properties:
+        id:
+          type: string
+        title:
+          type: string
+        date:
+          type: string
+        summary:
+          type: string
+        imageUrl:
+          type: string
+        link:
+          type: string
+          nullable: true
+
+    Error:
+      type: object
+      required: [code, message]
+      properties:
+        code:
+          type: string
+        message:
+          type: string
+        details:
+          type: object
+          additionalProperties: true
