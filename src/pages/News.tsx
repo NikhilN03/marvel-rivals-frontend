@@ -1,4 +1,5 @@
 import img from "../assets/images/unloadedimgrivals.png";
+import { useNews } from "../hooks/useNews";
 
 type Story = {
   id: string;
@@ -8,43 +9,22 @@ type Story = {
   link?: string;
 };
 
-// Manually update these weekly
-const STORIES: Story[] = [
-  {
-    id: "s1",
-    title: "Marvel Rivals: Week in Review",
-    date: "Aug 28",
-    summary:
-      "Top roster moves, standout plays, and meta shifts from this week’s scrims and tournaments.",
-    link: "#"
-  },
-  {
-    id: "s2",
-    title: "Patch 1.0: What changed for your mains?",
-    date: "Aug 27",
-    summary:
-      "A simple rundown of buffs/nerfs and what they mean for competitive play.",
-    link: "#"
-  },
-  {
-    id: "s3",
-    title: "Community Spotlight: Rising teams to watch",
-    date: "Aug 26",
-    summary:
-      "Five rosters making waves in scrims — who’s peaking just in time for qualifiers?",
-    link: "#"
-  },
-  {
-    id: "s4",
-    title: "Esports roadmap: What’s next this season",
-    date: "Aug 25",
-    summary:
-      "Qualifier dates, format expectations, and where to catch official broadcasts.",
-    link: "#"
-  }
-];
-
 export default function News() {
+  const { data } = useNews();
+
+  // Use stories from the hook, then pad up to 4 with simple placeholders
+  const items = (data?.items ?? []) as Story[];
+  const needed = Math.max(0, 4 - items.length);
+  const placeholders: Story[] = Array.from({ length: needed }, (_, i) => ({
+    id: `placeholder-${i + 1}`,
+    title: "More stories coming soon",
+    date: "",
+    summary:
+      "Check back for the latest Marvel Rivals news, updates, and community highlights.",
+    link: "#",
+  }));
+  const stories: Story[] = [...items].slice(0, 4).concat(placeholders).slice(0, 4);
+
   return (
     <div className="w-full px-4 py-6">
       {/* Narrower center column */}
@@ -53,7 +33,7 @@ export default function News() {
 
         {/* Stacked cards, each taller but not full-width of screen */}
         <div className="space-y-6">
-          {STORIES.map((s) => (
+          {stories.map((s) => (
             <article
               key={s.id}
               className="overflow-hidden rounded-lg border border-gray-800 bg-gray-950 shadow-sm ring-1 ring-black/5 hover:bg-gray-900/60"
@@ -61,11 +41,11 @@ export default function News() {
               <img
                 src={img}
                 alt={s.title}
-                className="h-72 w-full object-cover sm:h-80 md:h-96"  /* taller */
+                className="h-72 w-full object-cover sm:h-80 md:h-96" /* taller */
                 loading="lazy"
               />
               <div className="p-5">
-                <div className="text-xs text-gray-400">{s.date}</div>
+                {s.date && <div className="text-xs text-gray-400">{s.date}</div>}
                 <h2 className="mt-1 text-lg font-semibold text-gray-100">
                   <a href={s.link} className="hover:text-brand">
                     {s.title}
